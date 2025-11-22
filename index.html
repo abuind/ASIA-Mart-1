@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asia Mart - Cosmetics & Groceries</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Asia Mart</h1>
+                    <p>Natural Cosmetics & Groceries</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link active">Home</a>
+                    <a href="index.html#products" class="nav-link">Products</a>
+                    <a href="cart.html" class="nav-link">
+                        Cart <span class="cart-count">0</span>
+                    </a>
+                    <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                    <a href="#" class="nav-link" id="logoutLink" style="display: none;">Logout</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>Welcome to Asia Mart</h2>
+                <p>Premium Homemade Soaps, Shikkakai Powder & Organic Groceries</p>
+                <a href="#products" class="btn btn-primary">Shop Now</a>
+            </div>
+        </section>
+
+        <section class="categories">
+            <div class="container">
+                <h2>Shop by Category</h2>
+                <div class="category-filters">
+                    <button class="category-btn active" data-category="all">All Products</button>
+                    <button class="category-btn" data-category="Cosmetics">Cosmetics</button>
+                    <button class="category-btn" data-category="Groceries">Groceries</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="search-section">
+            <div class="container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+            </div>
+        </section>
+
+        <section id="products" class="products-section">
+            <div class="container">
+                <h2>Our Products</h2>
+                <div id="productsGrid" class="products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+                <div id="noProducts" class="no-products" style="display: none;">
+                    <p>No products found. Try a different search or category.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Asia Mart</h3>
+                    <p>Your trusted source for natural cosmetics and organic groceries.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Products</a>
+                    <a href="cart.html">Cart</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Admin</h3>
+                    <a href="admin/index.html">Admin Panel</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Asia Mart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script>
+        // Wait for DB to initialize
+        let dbReady = false;
+        const initInterval = setInterval(() => {
+            if (db) {
+                dbReady = true;
+                clearInterval(initInterval);
+                initPage();
+            }
+        }, 100);
+
+        async function initPage() {
+            // Check login status
+            if (isCustomerLoggedIn()) {
+                document.getElementById('loginLink').style.display = 'none';
+                document.getElementById('logoutLink').style.display = 'inline';
+                document.getElementById('logoutLink').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    logout();
+                });
+            }
+
+            // Update cart count
+            await updateCartCountDisplay();
+
+            // Load products
+            await loadProducts();
+
+            // Setup category filters
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const category = btn.dataset.category;
+                    await loadProducts(category === 'all' ? null : category);
+                });
+            });
+
+            // Setup search
+            const searchInput = document.getElementById('searchInput');
+            const debouncedSearch = debounce(async (query) => {
+                if (query.trim()) {
+                    const results = await searchProducts(query);
+                    displayProducts(results);
+                } else {
+                    await loadProducts();
+                }
+            }, 300);
+            searchInput.addEventListener('input', (e) => {
+                debouncedSearch(e.target.value);
+            });
+        }
+
+        async function loadProducts(category = null) {
+            let products;
+            if (category) {
+                products = await getProductsByCategory(category);
+            } else {
+                products = await getAllProducts();
+            }
+            displayProducts(products);
+        }
+
+        function displayProducts(products) {
+            const grid = document.getElementById('productsGrid');
+            const noProducts = document.getElementById('noProducts');
+
+            if (products.length === 0) {
+                grid.innerHTML = '';
+                noProducts.style.display = 'block';
+                return;
+            }
+
+            noProducts.style.display = 'none';
+            grid.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=Product'">
+                        ${product.stock <= 10 ? '<span class="stock-badge low-stock">Low Stock</span>' : ''}
+                        ${product.stock === 0 ? '<span class="stock-badge out-of-stock">Out of Stock</span>' : ''}
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${product.name}</h3>
+                        <p class="product-category">${product.category}</p>
+                        <p class="product-description">${product.description.substring(0, 100)}...</p>
+                        <div class="product-footer">
+                            <span class="product-price">${formatCurrency(product.price)}</span>
+                            <a href="product.html?id=${product.id}" class="btn btn-secondary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
+

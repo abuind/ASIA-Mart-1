@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Asia Mart</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="container">
+            <div class="admin-header-content">
+                <h1>Asia Mart Admin Panel</h1>
+                <nav class="admin-nav">
+                    <a href="index.html" class="admin-nav-link active">Dashboard</a>
+                    <a href="orders.html" class="admin-nav-link">Orders</a>
+                    <a href="customers.html" class="admin-nav-link">Customers</a>
+                    <a href="inventory.html" class="admin-nav-link">Inventory</a>
+                    <a href="analytics.html" class="admin-nav-link">Analytics</a>
+                    <a href="#" class="admin-nav-link" id="logoutBtn">Logout</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <div class="container">
+            <h2>Dashboard</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Total Orders</h3>
+                    <div class="metric-value" id="totalOrders">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Total Revenue</h3>
+                    <div class="metric-value" id="totalRevenue">$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Total Customers</h3>
+                    <div class="metric-value" id="totalCustomers">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Low Stock Items</h3>
+                    <div class="metric-value" id="lowStockItems">0</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>Recent Orders</h3>
+                    <div id="recentOrders">
+                        <!-- Recent orders will be loaded here -->
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Sales Chart (Last 7 Days)</h3>
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Quick Actions</h3>
+                <div class="quick-actions">
+                    <a href="orders.html" class="btn btn-primary">View All Orders</a>
+                    <a href="inventory.html" class="btn btn-secondary">Manage Inventory</a>
+                    <a href="customers.html" class="btn btn-secondary">View Customers</a>
+                    <a href="analytics.html" class="btn btn-secondary">View Analytics</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/db.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
+

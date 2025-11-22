@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Asia Mart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Asia Mart</h1>
+                    <p>Natural Cosmetics & Groceries</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="index.html#products" class="nav-link">Products</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="confirmation-container">
+                <div class="confirmation-icon">✓</div>
+                <h1>Order Confirmed!</h1>
+                <p>Thank you for your purchase. Your order has been received.</p>
+                <div id="orderDetails" class="order-details">
+                    <!-- Order details will be loaded here -->
+                </div>
+                <div class="confirmation-actions">
+                    <a href="index.html" class="btn btn-primary">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let dbReady = false;
+        const initInterval = setInterval(() => {
+            if (db) {
+                dbReady = true;
+                clearInterval(initInterval);
+                initPage();
+            }
+        }, 100);
+
+        async function initPage() {
+            const orderId = parseInt(getQueryParam('orderId'));
+            if (!orderId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const order = await DB.get(STORES.ORDERS, orderId);
+            if (!order) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const detailsDiv = document.getElementById('orderDetails');
+            detailsDiv.innerHTML = `
+                <div class="order-info">
+                    <h2>Order #${order.id}</h2>
+                    <p><strong>Status:</strong> ${order.status}</p>
+                    <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+                    <p><strong>Total:</strong> ${formatCurrency(order.total)}</p>
+                    <p><strong>Date:</strong> ${formatDate(order.createdAt)}</p>
+                </div>
+                <div class="order-items">
+                    <h3>Order Items</h3>
+                    ${order.items.map(item => `
+                        <div class="order-item-row">
+                            <span>${item.name} x ${item.quantity}</span>
+                            <span>${formatCurrency(item.price * item.quantity)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="shipping-info">
+                    <h3>Shipping Address</h3>
+                    <p>${order.shippingAddress.street}</p>
+                    <p>${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zip}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+

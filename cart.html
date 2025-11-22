@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Asia Mart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Asia Mart</h1>
+                    <p>Natural Cosmetics & Groceries</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="index.html#products" class="nav-link">Products</a>
+                    <a href="cart.html" class="nav-link active">
+                        Cart <span class="cart-count">0</span>
+                    </a>
+                    <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                    <a href="#" class="nav-link" id="logoutLink" style="display: none;">Logout</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <h1>Shopping Cart</h1>
+            <div id="cartContainer">
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                <div id="emptyCart" class="empty-cart" style="display: none;">
+                    <p>Your cart is empty.</p>
+                    <a href="index.html" class="btn btn-primary">Continue Shopping</a>
+                </div>
+                <div id="cartSummary" class="cart-summary" style="display: none;">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping:</span>
+                        <span>Calculated at checkout</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    <a href="checkout.html" class="btn btn-primary btn-large">Proceed to Checkout</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Asia Mart</h3>
+                    <p>Your trusted source for natural cosmetics and organic groceries.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Products</a>
+                    <a href="cart.html">Cart</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Asia Mart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script>
+        let dbReady = false;
+        const initInterval = setInterval(() => {
+            if (db) {
+                dbReady = true;
+                clearInterval(initInterval);
+                initPage();
+            }
+        }, 100);
+
+        async function initPage() {
+            if (isCustomerLoggedIn()) {
+                document.getElementById('loginLink').style.display = 'none';
+                document.getElementById('logoutLink').style.display = 'inline';
+                document.getElementById('logoutLink').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    logout();
+                });
+            }
+
+            await loadCart();
+        }
+
+        async function loadCart() {
+            const items = await getCartItems();
+            const cartItemsDiv = document.getElementById('cartItems');
+            const emptyCartDiv = document.getElementById('emptyCart');
+            const cartSummaryDiv = document.getElementById('cartSummary');
+
+            if (items.length === 0) {
+                cartItemsDiv.innerHTML = '';
+                emptyCartDiv.style.display = 'block';
+                cartSummaryDiv.style.display = 'none';
+                await updateCartCountDisplay();
+                return;
+            }
+
+            emptyCartDiv.style.display = 'none';
+            cartSummaryDiv.style.display = 'block';
+
+            cartItemsDiv.innerHTML = items.map(item => `
+                <div class="cart-item" data-id="${item.id}">
+                    <div class="cart-item-image">
+                        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/100x100?text=Product'">
+                    </div>
+                    <div class="cart-item-info">
+                        <h3><a href="product.html?id=${item.productId}">${item.name}</a></h3>
+                        <p class="cart-item-price">${formatCurrency(item.price)} each</p>
+                    </div>
+                    <div class="cart-item-quantity">
+                        <button class="qty-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
+                        <input type="number" value="${item.quantity}" min="1" max="${item.stock}" 
+                               onchange="updateQuantity(${item.id}, parseInt(this.value))">
+                        <button class="qty-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+                    </div>
+                    <div class="cart-item-total">
+                        ${formatCurrency(item.price * item.quantity)}
+                    </div>
+                    <div class="cart-item-actions">
+                        <button class="btn-remove" onclick="removeItem(${item.id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const total = calculateCartTotal(items);
+            document.getElementById('subtotal').textContent = formatCurrency(total);
+            document.getElementById('total').textContent = formatCurrency(total);
+
+            await updateCartCountDisplay();
+        }
+
+        async function updateQuantity(cartItemId, newQuantity) {
+            if (newQuantity < 1) {
+                await removeItem(cartItemId);
+                return;
+            }
+
+            const result = await updateCartItem(cartItemId, newQuantity);
+            if (result.success) {
+                showNotification(result.message, 'success');
+                await loadCart();
+            } else {
+                showNotification(result.message, 'error');
+                await loadCart();
+            }
+        }
+
+        async function removeItem(cartItemId) {
+            const result = await removeFromCart(cartItemId);
+            if (result.success) {
+                showNotification(result.message, 'success');
+                await loadCart();
+            } else {
+                showNotification(result.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

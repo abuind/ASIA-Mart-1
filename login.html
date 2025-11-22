@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Asia Mart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Asia Mart</h1>
+                    <p>Natural Cosmetics & Groceries</p>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="index.html#products" class="nav-link">Products</a>
+                    <a href="cart.html" class="nav-link">Cart</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="login-container">
+                <div class="login-box" id="customerLoginBox">
+                    <h2>Customer Login</h2>
+                    <form id="customerLoginForm">
+                        <div class="form-group">
+                            <label for="customerEmail">Email</label>
+                            <input type="email" id="customerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPassword">Password</label>
+                            <input type="password" id="customerPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                    </form>
+                    <p class="login-switch">
+                        Don't have an account? <a href="#" id="showRegister">Register</a>
+                    </p>
+                </div>
+
+                <div class="login-box" id="customerRegisterBox" style="display: none;">
+                    <h2>Customer Registration</h2>
+                    <form id="customerRegisterForm">
+                        <div class="form-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regEmail">Email</label>
+                            <input type="email" id="regEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">Password (min 6 characters)</label>
+                            <input type="password" id="regPassword" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPhone">Phone</label>
+                            <input type="tel" id="regPhone">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Register</button>
+                    </form>
+                    <p class="login-switch">
+                        Already have an account? <a href="#" id="showLogin">Login</a>
+                    </p>
+                </div>
+
+                <div class="login-box" id="adminLoginBox" style="display: none;">
+                    <h2>Admin Login</h2>
+                    <form id="adminLoginForm">
+                        <div class="form-group">
+                            <label for="adminUsername">Username</label>
+                            <input type="text" id="adminUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPassword">Password</label>
+                            <input type="password" id="adminPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                    </form>
+                    <p class="login-switch">
+                        <a href="#" id="showCustomerLogin">Customer Login</a> | 
+                        <a href="index.html">Back to Store</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Asia Mart</h3>
+                    <p>Your trusted source for natural cosmetics and organic groceries.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Asia Mart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let dbReady = false;
+        const initInterval = setInterval(() => {
+            if (db) {
+                dbReady = true;
+                clearInterval(initInterval);
+                initPage();
+            }
+        }, 100);
+
+        function initPage() {
+            const isAdmin = getQueryParam('admin') === 'true';
+            
+            if (isAdmin) {
+                document.getElementById('customerLoginBox').style.display = 'none';
+                document.getElementById('adminLoginBox').style.display = 'block';
+            }
+
+            // Toggle between login and register
+            document.getElementById('showRegister').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('customerLoginBox').style.display = 'none';
+                document.getElementById('customerRegisterBox').style.display = 'block';
+            });
+
+            document.getElementById('showLogin').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('customerRegisterBox').style.display = 'none';
+                document.getElementById('customerLoginBox').style.display = 'block';
+            });
+
+            document.getElementById('showCustomerLogin').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('adminLoginBox').style.display = 'none';
+                document.getElementById('customerLoginBox').style.display = 'block';
+            });
+
+            // Customer login
+            document.getElementById('customerLoginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('customerEmail').value;
+                const password = document.getElementById('customerPassword').value;
+
+                const result = await customerLogin(email, password);
+                if (result.success) {
+                    showNotification('Login successful!', 'success');
+                    setTimeout(() => {
+                        const returnUrl = getQueryParam('return') || 'index.html';
+                        window.location.href = returnUrl;
+                    }, 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            });
+
+            // Customer registration
+            document.getElementById('customerRegisterForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('regName').value;
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                const phone = document.getElementById('regPhone').value;
+
+                const result = await customerRegister(name, email, password, phone, {});
+                if (result.success) {
+                    showNotification('Registration successful!', 'success');
+                    setTimeout(() => {
+                        const returnUrl = getQueryParam('return') || 'index.html';
+                        window.location.href = returnUrl;
+                    }, 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            });
+
+            // Admin login
+            document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('adminUsername').value;
+                const password = document.getElementById('adminPassword').value;
+
+                const result = await adminLogin(username, password);
+                if (result.success) {
+                    showNotification('Admin login successful!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'admin/index.html';
+                    }, 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
